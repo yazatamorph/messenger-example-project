@@ -11,16 +11,20 @@ router.post("/", async (req, res, next) => {
     const senderId = req.user.id;
     const { recipientId, text, conversationId, sender } = req.body;
 
-    // if we already know conversation id, we can save time and just add it to message and return
-    if (conversationId) {
-      const message = await Message.create({ senderId, text, conversationId });
-      return res.json({ message, sender });
-    }
-    // if we don't have conversation id, find a conversation to make sure it doesn't already exist
+    // Moved up in function to allow us to ensure messages aren't
+    // sent to conversations in which they aren't a member.
     let conversation = await Conversation.findConversation(
       senderId,
       recipientId
     );
+
+    if (conversationId) {
+      // Without this check, a user could send messages to any conversation if they have the conversationId
+      if (conversationId !== conversation.id)
+        throw new Error("NotInConversation");
+      const message = await Message.create({ senderId, text, conversationId });
+      return res.json({ message, sender });
+    }
 
     if (!conversation) {
       // create conversation
@@ -39,6 +43,12 @@ router.post("/", async (req, res, next) => {
     });
     res.json({ message, sender });
   } catch (error) {
+    if (error.message === "NotInConversation") {
+      return res
+        .status(403)
+        .json({ error: "Sender is not a member of conversation." });
+    }
+
     next(error);
   }
 });
