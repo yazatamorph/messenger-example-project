@@ -20,7 +20,7 @@ router.post("/", async (req, res, next) => {
 
     if (conversationId) {
       // Without this check, a user could send messages to any conversation if they have the conversationId
-      if (conversationId !== conversation.id)
+      if (!conversation.id || conversationId !== conversation.id)
         throw new Error("NotInConversation");
       const message = await Message.create({ senderId, text, conversationId });
       return res.json({ message, sender });
