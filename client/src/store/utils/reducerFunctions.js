@@ -81,3 +81,20 @@ export const addNewConvoToStore = (state, recipientId, message) => {
     }
   });
 };
+
+export const setMessageViewed = (state, conversationId, messageId) => {
+  return state.map((convo) => {
+    if (convo.id === conversationId) {
+      const newConvo = { ...convo };
+      for (let i = 0; i < newConvo.messages.length; i++) {
+        if (newConvo.messages[i].id === messageId) {
+          newConvo.messages[i].viewed = true;
+          break;
+        }
+      }
+      return newConvo;
+    } else {
+      return convo;
+    }
+  });
+};
