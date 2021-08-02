@@ -11,20 +11,30 @@ router.post("/", async (req, res, next) => {
     const senderId = req.user.id;
     const { recipientId, text, conversationId, sender } = req.body;
 
-    // Moved up in function to allow us to ensure messages aren't
-    // sent to conversations in which they aren't a member.
+    if (conversationId) {
+      // Improved this query by searching for the primary index (id)
+      let conversation = await Conversation.findOne({
+        where: {
+          id: conversationId,
+        },
+      });
+      // Without this check, a user could send messages to any conversation if they have the conversationId
+      if (
+        conversation?.user1Id !== senderId &&
+        conversation?.user2Id !== senderId
+      ) {
+        return res
+          .status(403)
+          .json({ error: "Sender is not a member of conversation." });
+      }
+      const message = await Message.create({ senderId, text, conversationId });
+      return res.json({ message, sender });
+    }
+
     let conversation = await Conversation.findConversation(
       senderId,
       recipientId
     );
-
-    if (conversationId) {
-      // Without this check, a user could send messages to any conversation if they have the conversationId
-      if (!conversation.id || conversationId !== conversation.id)
-        throw new Error("NotInConversation");
-      const message = await Message.create({ senderId, text, conversationId });
-      return res.json({ message, sender });
-    }
 
     if (!conversation) {
       // create conversation
@@ -43,12 +53,6 @@ router.post("/", async (req, res, next) => {
     });
     res.json({ message, sender });
   } catch (error) {
-    if (error.message === "NotInConversation") {
-      return res
-        .status(403)
-        .json({ error: "Sender is not a member of conversation." });
-    }
-
     next(error);
   }
 });
