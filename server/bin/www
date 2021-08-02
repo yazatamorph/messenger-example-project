@@ -10,6 +10,7 @@ require("dotenv").config();
 const { app, sessionStore } = require("../app");
 const http = require("http");
 const db = require("../db");
+const { Message } = require("../db/models");
 const onlineUsers = require("../onlineUsers");
 
 /**
@@ -45,6 +46,11 @@ io.on("connection", (socket) => {
       message: data.message,
       sender: data.sender,
     });
+  });
+
+  socket.on("read-receipt", async (data) => {
+    const message = await Message.updateReadReceipt(data.messageId);
+    if (message) socket.broadcast.emit("read-receipt", data);
   });
 
   socket.on("logout", (id) => {
