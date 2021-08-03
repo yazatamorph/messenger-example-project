@@ -11,12 +11,26 @@ router.post("/", async (req, res, next) => {
     const senderId = req.user.id;
     const { recipientId, text, conversationId, sender } = req.body;
 
-    // if we already know conversation id, we can save time and just add it to message and return
     if (conversationId) {
+      // Improved this query by searching for the primary index (id)
+      let conversation = await Conversation.findOne({
+        where: {
+          id: conversationId,
+        },
+      });
+      // Without this check, a user could send messages to any conversation if they have the conversationId
+      if (
+        conversation?.user1Id !== senderId &&
+        conversation?.user2Id !== senderId
+      ) {
+        return res
+          .status(403)
+          .json({ error: "Sender is not a member of conversation." });
+      }
       const message = await Message.create({ senderId, text, conversationId });
       return res.json({ message, sender });
     }
-    // if we don't have conversation id, find a conversation to make sure it doesn't already exist
+
     let conversation = await Conversation.findConversation(
       senderId,
       recipientId
