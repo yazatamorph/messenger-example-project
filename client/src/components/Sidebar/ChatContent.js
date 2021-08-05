@@ -36,6 +36,11 @@ const ChatContent = (props) => {
           {latestMessageText}
         </Typography>
       </Box>
+      {/* TODO:
+          
+        Display the number of unread messages in conversation
+        BOLD most recent message if unread messages
+      */}
     </Box>
   );
 };

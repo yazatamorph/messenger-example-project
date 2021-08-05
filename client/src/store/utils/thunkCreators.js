@@ -104,14 +104,10 @@ const sendReadReceipt = (conversationId, messageId) => {
 };
 
 export const updateReadReceipt = (conversationId, messageId) => (dispatch) => {
-  try {
-    // emits read receipt when user looks at new message
-    sendReadReceipt(conversationId, messageId);
-    // updates when user reads message
-    dispatch(setMessageRead(conversationId, messageId));
-  } catch (err) {
-    console.error(err);
-  }
+  // emits read receipt when user looks at new message
+  sendReadReceipt(conversationId, messageId);
+  // updates when user reads message
+  dispatch(setMessageRead(conversationId, messageId));
 };
 
 // message format to send: {recipientId, text, conversationId}
