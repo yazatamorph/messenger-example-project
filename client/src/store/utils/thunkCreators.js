@@ -103,12 +103,24 @@ const sendReadReceipt = (conversationId, messageId) => {
   });
 };
 
-export const updateReadReceipt = (conversationId, messageId) => (dispatch) => {
-  // emits read receipt when user looks at new message
-  sendReadReceipt(conversationId, messageId);
-  // updates when user reads message
-  dispatch(setMessageRead(conversationId, messageId));
+const saveReadReceipt = async (messageId) => {
+  const { data } = await axios.post("/api/read", { messageId });
+  return data;
 };
+
+export const updateReadReceipt =
+  (conversationId, messageId) => async (dispatch) => {
+    try {
+      // saves read status to DB
+      await saveReadReceipt(messageId);
+      // emits read receipt when user looks at new message
+      sendReadReceipt(conversationId, messageId);
+      // updates when user reads message
+      dispatch(setMessageRead(conversationId, messageId));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
 // message format to send: {recipientId, text, conversationId}
 // conversationId will be set to null if its a brand new conversation

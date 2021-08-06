@@ -49,8 +49,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("read-receipt", async (data) => {
-    const message = await Message.updateReadReceipt(data.messageId);
-    if (message) socket.broadcast.emit("read-receipt", data);
+    socket.broadcast.emit("read-receipt", data);
   });
 
   socket.on("logout", (id) => {
