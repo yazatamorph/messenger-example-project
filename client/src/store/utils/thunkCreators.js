@@ -70,14 +70,14 @@ export const logout = (id) => async (dispatch) => {
 
 // CONVERSATIONS THUNK CREATORS
 
-export const fetchConversations = () => async (dispatch) => {
+export const fetchConversations = (id) => async (dispatch) => {
   try {
     const { data } = await axios.get("/api/conversations");
     // This is a somewhat costly operation, but it's mitigated by only being performed once
     data.forEach((c) => {
       c.messages.reverse();
     });
-    dispatch(gotConversations(data));
+    dispatch(gotConversations(id, data));
   } catch (error) {
     console.error(error);
   }

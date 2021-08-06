@@ -16,11 +16,31 @@ export const addMessageToStore = (state, payload) => {
       const convoCopy = { ...convo };
       convoCopy.messages.push(message);
       convoCopy.latestMessageText = message.text;
+      if (
+        convoCopy.otherUser.id !== message.senderId &&
+        (!convoCopy.latestView || convoCopy.latestView < message.id)
+      )
+        convoCopy.latestView = message.id;
 
       return convoCopy;
     } else {
       return convo;
     }
+  });
+};
+
+// sets initial read receipt values on loaded conversations
+export const loadedConversations = (state, id, conversations) => {
+  return conversations.map((convo) => {
+    const convoCopy = { ...convo };
+
+    for (let i = convo.messages.length - 1; i >= 0; i--) {
+      if (convo.messages[i].senderId === id && convo.messages[i].viewed) {
+        convoCopy.latestView = convo.messages[i].id;
+        break;
+      }
+    }
+    return convoCopy;
   });
 };
 
@@ -76,7 +96,7 @@ export const addNewConvoToStore = (state, recipientId, message) => {
       newConvo.messages.push(message);
       newConvo.latestMessageText = message.text;
       newConvo.latestView = null;
-      newConvo.unreadCount = 1;
+      // newConvo.unreadCount = 1;
       return newConvo;
     } else {
       return convo;

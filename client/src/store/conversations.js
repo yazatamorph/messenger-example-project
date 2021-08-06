@@ -5,6 +5,7 @@ import {
   removeOfflineUserFromStore,
   addMessageToStore,
   setMessageViewed,
+  loadedConversations,
 } from "./utils/reducerFunctions";
 
 // ACTIONS
@@ -20,10 +21,10 @@ const VIEWED_MESSAGE = "VIEWED_MESSAGE";
 
 // ACTION CREATORS
 
-export const gotConversations = (conversations) => {
+export const gotConversations = (id, conversations) => {
   return {
     type: GET_CONVERSATIONS,
-    conversations,
+    payload: { id, conversations },
   };
 };
 
@@ -83,7 +84,11 @@ export const setMessageRead = (conversationId, messageId) => {
 const reducer = (state = [], action) => {
   switch (action.type) {
     case GET_CONVERSATIONS:
-      return action.conversations;
+      return loadedConversations(
+        state,
+        action.payload.id,
+        action.payload.conversations
+      );
     case SET_MESSAGE:
       return addMessageToStore(state, action.payload);
     case ADD_ONLINE_USER: {
