@@ -103,8 +103,11 @@ const sendReadReceipt = (conversationId, messageId) => {
   });
 };
 
-const saveReadReceipt = async (messageId) => {
-  const { data } = await axios.post("/api/read", { messageId });
+const saveReadReceipt = async (conversationId, messageId) => {
+  const { data } = await axios.patch("/api/messages/viewed", {
+    conversationId,
+    messageId,
+  });
   return data;
 };
 
@@ -112,7 +115,7 @@ export const updateReadReceipt =
   (conversationId, messageId) => async (dispatch) => {
     try {
       // saves read status to DB
-      await saveReadReceipt(messageId);
+      await saveReadReceipt(conversationId, messageId);
       // emits read receipt when user looks at new message
       sendReadReceipt(conversationId, messageId);
       // updates when user reads message
