@@ -1,11 +1,11 @@
-import React, { Component } from "react";
+import React from "react";
 import { Box } from "@material-ui/core";
-import { BadgeAvatar, ChatContent } from "../Sidebar";
-import { withStyles } from "@material-ui/core/styles";
+import { BadgeAvatar, ChatContent, CountUnread } from "../Sidebar";
+import { makeStyles } from "@material-ui/core/styles";
 import { setActiveChat } from "../../store/activeConversation";
 import { connect } from "react-redux";
 
-const styles = {
+const useStyles = makeStyles(() => ({
   root: {
     borderRadius: 8,
     height: 80,
@@ -17,32 +17,38 @@ const styles = {
       cursor: "grab",
     },
   },
-};
+}));
 
-class Chat extends Component {
-  handleClick = async (conversation) => {
-    await this.props.setActiveChat(conversation.otherUser.username);
+const Chat = (props) => {
+  const classes = useStyles();
+  const { conversation } = props;
+  const otherUser = conversation.otherUser;
+
+  const handleClick = async (convo) => {
+    await props.setActiveChat(convo.otherUser.username);
   };
 
-  render() {
-    const { classes } = this.props;
-    const otherUser = this.props.conversation.otherUser;
-    return (
-      <Box
-        onClick={() => this.handleClick(this.props.conversation)}
-        className={classes.root}
-      >
-        <BadgeAvatar
-          photoUrl={otherUser.photoUrl}
-          username={otherUser.username}
-          online={otherUser.online}
-          sidebar={true}
-        />
-        <ChatContent conversation={this.props.conversation} />
-      </Box>
-    );
-  }
-}
+  const newMessageState = conversation.unreadCount > 0;
+
+  return (
+    <Box onClick={() => handleClick(conversation)} className={classes.root}>
+      <BadgeAvatar
+        photoUrl={otherUser.photoUrl}
+        username={otherUser.username}
+        online={otherUser.online}
+        sidebar={true}
+      />
+      <ChatContent conversation={conversation} newMsgs={newMessageState} />
+      {newMessageState && <CountUnread count={conversation.unreadCount} />}
+    </Box>
+  );
+};
+
+const mapStateToProps = (state) => {
+  return {
+    user: state.user,
+  };
+};
 
 const mapDispatchToProps = (dispatch) => {
   return {
@@ -52,4 +58,4 @@ const mapDispatchToProps = (dispatch) => {
   };
 };
 
-export default connect(null, mapDispatchToProps)(withStyles(styles)(Chat));
+export default connect(mapStateToProps, mapDispatchToProps)(Chat);

@@ -5,6 +5,7 @@ import {
   addConversation,
   setNewMessage,
   setSearchedUsers,
+  setMessageRead,
 } from "../conversations";
 import { gotUser, setFetchingStatus } from "../user";
 
@@ -69,14 +70,14 @@ export const logout = (id) => async (dispatch) => {
 
 // CONVERSATIONS THUNK CREATORS
 
-export const fetchConversations = () => async (dispatch) => {
+export const fetchConversations = (id) => async (dispatch) => {
   try {
     const { data } = await axios.get("/api/conversations");
     // This is a somewhat costly operation, but it's mitigated by only being performed once
     data.forEach((c) => {
       c.messages.reverse();
     });
-    dispatch(gotConversations(data));
+    dispatch(gotConversations(id, data));
   } catch (error) {
     console.error(error);
   }
@@ -94,6 +95,35 @@ const sendMessage = (data, body) => {
     sender: data.sender,
   });
 };
+
+const sendReadReceipt = (conversationId, messageId) => {
+  socket.emit("read-receipt", {
+    conversationId,
+    messageId,
+  });
+};
+
+const saveReadReceipt = async (conversationId, messageId) => {
+  const { data } = await axios.patch("/api/messages/viewed", {
+    conversationId,
+    messageId,
+  });
+  return data;
+};
+
+export const updateReadReceipt =
+  (conversationId, messageId) => async (dispatch) => {
+    try {
+      // saves read status to DB
+      await saveReadReceipt(conversationId, messageId);
+      // emits read receipt when user looks at new message
+      sendReadReceipt(conversationId, messageId);
+      // updates when user reads message
+      dispatch(setMessageRead(conversationId, messageId));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
 // message format to send: {recipientId, text, conversationId}
 // conversationId will be set to null if its a brand new conversation

@@ -10,6 +10,24 @@ const Message = db.define("message", {
     type: Sequelize.INTEGER,
     allowNull: false,
   },
+  viewed: {
+    type: Sequelize.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
 });
+
+Message.updateReadReceipt = async function (messageId) {
+  const message = await Message.update(
+    { viewed: true },
+    {
+      where: {
+        id: messageId,
+      },
+    }
+  );
+
+  return message;
+};
 
 module.exports = Message;
