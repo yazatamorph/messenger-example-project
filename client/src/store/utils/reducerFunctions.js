@@ -18,6 +18,7 @@ export const addMessageToStore = (state, payload) => {
       convoCopy.latestMessageText = message.text;
       if (
         convoCopy.otherUser.id !== message.senderId &&
+        message.viewed &&
         (!convoCopy.latestView || convoCopy.latestView < message.id)
       )
         convoCopy.latestView = message.id;
