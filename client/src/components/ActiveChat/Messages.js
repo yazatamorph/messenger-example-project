@@ -18,7 +18,7 @@ const Messages = (props) => {
             time={time}
             // viewed is true if message.id matches the most recently viewed message's id
             viewed={message.id === latestView}
-            otherUser={message.id === latestView ? otherUser : null}
+            otherUser={message.id === latestView && otherUser}
           />
         ) : (
           <OtherUserBubble
