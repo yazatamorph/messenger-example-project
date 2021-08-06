@@ -22,7 +22,8 @@ export const addMessageToStore = (state, payload) => {
         (!convoCopy.latestView || convoCopy.latestView < message.id)
       )
         convoCopy.latestView = message.id;
-
+      if (convoCopy.otherUser.id === message.senderId && !message.viewed)
+        convoCopy.unreadCount++;
       return convoCopy;
     } else {
       return convo;
@@ -34,6 +35,14 @@ export const addMessageToStore = (state, payload) => {
 export const loadedConversations = (state, id, conversations) => {
   return conversations.map((convo) => {
     const convoCopy = { ...convo };
+
+    let count = 0;
+    convoCopy.messages.forEach((message) => {
+      if (!message.viewed && message.senderId === convoCopy.otherUser.id) {
+        count++;
+      }
+    });
+    convoCopy.unreadCount = count;
 
     for (let i = convo.messages.length - 1; i >= 0; i--) {
       if (convo.messages[i].senderId === id && convo.messages[i].viewed) {
@@ -97,7 +106,7 @@ export const addNewConvoToStore = (state, recipientId, message) => {
       newConvo.messages.push(message);
       newConvo.latestMessageText = message.text;
       newConvo.latestView = null;
-      // newConvo.unreadCount = 1;
+      newConvo.unreadCount = 0;
       return newConvo;
     } else {
       return convo;
@@ -109,6 +118,7 @@ export const setMessageViewed = (state, conversationId, messageId) => {
   return state.map((convo) => {
     if (convo.id === conversationId) {
       const newConvo = { ...convo };
+
       for (let i = 0; i < newConvo.messages.length; i++) {
         if (newConvo.messages[i].id === messageId) {
           newConvo.messages[i].viewed = true;
@@ -120,6 +130,15 @@ export const setMessageViewed = (state, conversationId, messageId) => {
           break;
         }
       }
+
+      let count = 0;
+      newConvo.messages.forEach((message) => {
+        if (!message.viewed && message.senderId === newConvo.otherUser.id) {
+          count++;
+        }
+      });
+      newConvo.unreadCount = count;
+
       return newConvo;
     } else {
       return convo;
