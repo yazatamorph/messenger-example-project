@@ -1,19 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Box } from "@material-ui/core";
 import { SenderBubble, OtherUserBubble } from "../ActiveChat";
 import moment from "moment";
 
 const Messages = (props) => {
-  const { messages, otherUser, userId } = props;
-  const [latestView, setLatestView] = useState(null);
-
-  useEffect(() => {
-    // iterates backwards to find most recently viewed message & stores its id in state
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].senderId === userId && messages[i].viewed)
-        return setLatestView(messages[i].id);
-    }
-  });
+  const { messages, otherUser, userId, latestView } = props;
 
   return (
     <Box>

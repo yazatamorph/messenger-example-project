@@ -75,6 +75,8 @@ export const addNewConvoToStore = (state, recipientId, message) => {
       newConvo.id = message.conversationId;
       newConvo.messages.push(message);
       newConvo.latestMessageText = message.text;
+      newConvo.latestView = null;
+      newConvo.unreadCount = 1;
       return newConvo;
     } else {
       return convo;
@@ -89,6 +91,11 @@ export const setMessageViewed = (state, conversationId, messageId) => {
       for (let i = 0; i < newConvo.messages.length; i++) {
         if (newConvo.messages[i].id === messageId) {
           newConvo.messages[i].viewed = true;
+          if (
+            newConvo.otherUser.id !== newConvo.messages[i].senderId &&
+            (!newConvo.latestView || newConvo.latestView < messageId)
+          )
+            newConvo.latestView = messageId;
           break;
         }
       }
