@@ -9,8 +9,9 @@ require("dotenv").config();
 
 const { app, sessionStore } = require("../app");
 const http = require("http");
+const jwt = require("jsonwebtoken");
 const db = require("../db");
-const { Message } = require("../db/models");
+const { Message, User } = require("../db/models");
 const onlineUsers = require("../onlineUsers");
 
 /**
@@ -31,6 +32,26 @@ const server = http.createServer(app);
  */
 
 const io = require("socket.io")(server);
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+
+  if (token) {
+    jwt.verify(token, process.env.SESSION_SECRET, (err, decoded) => {
+      if (err) {
+        return next(new Error("invalid_access_token"));
+      }
+      User.findOne({
+        where: { id: decoded.id },
+      }).then((user) => {
+        socket.user = user;
+        return next();
+      });
+    });
+  } else {
+    return next(new Error("missing_access_token"));
+  }
+});
 
 io.on("connection", (socket) => {
   socket.on("go-online", (id) => {
