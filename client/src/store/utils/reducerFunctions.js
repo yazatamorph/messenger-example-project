@@ -55,27 +55,29 @@ export const loadedConversations = (state, id, conversations) => {
 };
 
 export const addOnlineUserToStore = (state, id) => {
-  return state.map((convo) => {
-    if (convo.otherUser.id === id) {
-      const convoCopy = { ...convo };
+  const newState = Array.prototype.concat([], state);
+  for (let i = 0; i < newState.length; i++) {
+    if (newState[i].otherUser.id === id) {
+      const convoCopy = { ...newState[i] };
       convoCopy.otherUser.online = true;
-      return convoCopy;
-    } else {
-      return convo;
+      newState[i] = convoCopy;
+      break;
     }
-  });
+  }
+  return newState;
 };
 
 export const removeOfflineUserFromStore = (state, id) => {
-  return state.map((convo) => {
-    if (convo.otherUser.id === id) {
-      const convoCopy = { ...convo };
+  const newState = Array.prototype.concat([], state);
+  for (let i = 0; i < newState.length; i++) {
+    if (newState[i].otherUser.id === id) {
+      const convoCopy = { ...newState[i] };
       convoCopy.otherUser.online = false;
-      return convoCopy;
-    } else {
-      return convo;
+      newState[i] = convoCopy;
+      break;
     }
-  });
+  }
+  return newState;
 };
 
 export const addSearchedUsersToStore = (state, users) => {
