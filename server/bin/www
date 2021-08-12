@@ -10,8 +10,9 @@ require("dotenv").config();
 const { app, sessionStore } = require("../app");
 const http = require("http");
 const jwt = require("jsonwebtoken");
+const { Op } = require("sequelize");
 const db = require("../db");
-const { Message, User } = require("../db/models");
+const { Conversation, User } = require("../db/models");
 const onlineUsers = require("../onlineUsers");
 
 /**
@@ -32,7 +33,8 @@ const server = http.createServer(app);
  */
 
 const io = require("socket.io")(server);
-
+// middleware to prevent unauthorized connections.
+// Somewhat expensive, but only runs when a client connects.
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
 
@@ -44,8 +46,19 @@ io.use((socket, next) => {
       User.findOne({
         where: { id: decoded.id },
       }).then((user) => {
-        socket.user = user;
-        return next();
+        socket.user = { id: user.id };
+        Conversation.findAll({
+          where: {
+            [Op.or]: {
+              user1Id: user.id,
+              user2Id: user.id,
+            },
+          },
+        }).then((convos) => {
+          // Adds user to private rooms to avoid sending events to third parties
+          convos.forEach((c) => socket.join(`cId-${c.id}`));
+          return next();
+        });
       });
     });
   } else {
@@ -63,14 +76,14 @@ io.on("connection", (socket) => {
   });
 
   socket.on("new-message", (data) => {
-    socket.broadcast.emit("new-message", {
+    socket.to(`cId-${data.message.conversationId}`).emit("new-message", {
       message: data.message,
       sender: data.sender,
     });
   });
 
   socket.on("read-receipt", async (data) => {
-    socket.broadcast.emit("read-receipt", data);
+    socket.to(`cId-${data.conversationId}`).emit("read-receipt", data);
   });
 
   socket.on("logout", (id) => {
