@@ -46,19 +46,8 @@ io.use((socket, next) => {
       User.findOne({
         where: { id: decoded.id },
       }).then((user) => {
-        socket.user = { id: user.id };
-        Conversation.findAll({
-          where: {
-            [Op.or]: {
-              user1Id: user.id,
-              user2Id: user.id,
-            },
-          },
-        }).then((convos) => {
-          // Adds user to private rooms to avoid sending events to third parties
-          convos.forEach((c) => socket.join(`cId-${c.id}`));
-          return next();
-        });
+        socket.join(`uId-${user.id}`);
+        return next();
       });
     });
   } else {
@@ -76,14 +65,14 @@ io.on("connection", (socket) => {
   });
 
   socket.on("new-message", (data) => {
-    socket.to(`cId-${data.message.conversationId}`).emit("new-message", {
+    socket.to(`uId-${data.recipientId}`).emit("new-message", {
       message: data.message,
       sender: data.sender,
     });
   });
 
-  socket.on("read-receipt", async (data) => {
-    socket.to(`cId-${data.conversationId}`).emit("read-receipt", data);
+  socket.on("read-receipt", (data) => {
+    socket.to(`uId-${data.recipientId}`).emit("read-receipt", data);
   });
 
   socket.on("logout", (id) => {

@@ -83,8 +83,9 @@ export const fetchConversations = (id) => async (dispatch) => {
   }
 };
 
-const sendReadReceipt = (conversationId, messageId) => {
+const sendReadReceipt = (recipientId, conversationId, messageId) => {
   socket.emit("read-receipt", {
+    recipientId,
     conversationId,
     messageId,
   });
@@ -102,9 +103,9 @@ export const updateReadReceipt =
   (conversationId, messageId) => async (dispatch) => {
     try {
       // saves read status to DB
-      await saveReadReceipt(conversationId, messageId);
+      const data = await saveReadReceipt(conversationId, messageId);
       // emits read receipt when user looks at new message
-      sendReadReceipt(conversationId, messageId);
+      sendReadReceipt(data.recipientId, conversationId, messageId);
       // updates when user reads message
       dispatch(setMessageRead(conversationId, messageId));
     } catch (err) {
@@ -130,7 +131,6 @@ const sendMessage = (data, body) => {
 export const postMessage = (body) => async (dispatch) => {
   try {
     const data = await saveMessage(body);
-
     if (!body.conversationId) {
       dispatch(addConversation(body.recipientId, data.message));
     } else {
@@ -142,7 +142,7 @@ export const postMessage = (body) => async (dispatch) => {
     console.error(error);
   }
 };
-
+// TODO: Issue #4 Find where this is called and debounce so it doesn't flood API with every character typed
 export const searchUsers = (searchTerm) => async (dispatch) => {
   try {
     const { data } = await axios.get(`/api/users/${searchTerm}`);
