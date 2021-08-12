@@ -24,6 +24,8 @@ export const fetchUser = () => async (dispatch) => {
     const { data } = await axios.get("/auth/user");
     dispatch(gotUser(data));
     if (data.id) {
+      socket.auth.token = await localStorage.getItem("messenger-token");
+      socket.connect();
       socket.emit("go-online", data.id);
     }
   } catch (error) {
@@ -38,6 +40,8 @@ export const register = (credentials) => async (dispatch) => {
     const { data } = await axios.post("/auth/register", credentials);
     await localStorage.setItem("messenger-token", data.token);
     dispatch(gotUser(data));
+    socket.auth.token = data.token;
+    socket.connect();
     socket.emit("go-online", data.id);
   } catch (error) {
     console.error(error);
@@ -50,6 +54,8 @@ export const login = (credentials) => async (dispatch) => {
     const { data } = await axios.post("/auth/login", credentials);
     await localStorage.setItem("messenger-token", data.token);
     dispatch(gotUser(data));
+    socket.auth.token = data.token;
+    socket.connect();
     socket.emit("go-online", data.id);
   } catch (error) {
     console.error(error);
@@ -142,7 +148,7 @@ export const postMessage = (body) => async (dispatch) => {
     console.error(error);
   }
 };
-// TODO: Issue #4 Find where this is called and debounce so it doesn't flood API with every character typed
+
 export const searchUsers = (searchTerm) => async (dispatch) => {
   try {
     const { data } = await axios.get(`/api/users/${searchTerm}`);
