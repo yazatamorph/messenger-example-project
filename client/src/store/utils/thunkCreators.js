@@ -80,7 +80,7 @@ export const fetchConversations = (id) => async (dispatch) => {
   try {
     const { data } = await axios.get("/api/conversations");
     // This is a somewhat costly operation, but it's mitigated by only being performed once
-    data.forEach((c) => {
+    data.forEach((c, index) => {
       c.messages.reverse();
     });
     dispatch(gotConversations(id, data));

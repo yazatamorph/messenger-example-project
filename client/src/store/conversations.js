@@ -81,7 +81,7 @@ export const setMessageRead = (conversationId, messageId) => {
 
 // REDUCER
 
-const reducer = (state = [], action) => {
+const reducer = (state = new Map(), action) => {
   switch (action.type) {
     case GET_CONVERSATIONS:
       return loadedConversations(
