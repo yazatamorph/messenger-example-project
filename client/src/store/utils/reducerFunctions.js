@@ -1,6 +1,7 @@
 export const addMessageToStore = (state, payload) => {
   const { message, sender } = payload;
   // if sender isn't null, that means the message needs to be put in a brand new convo
+  const newState = new Map(state);
   if (sender !== null) {
     const newConvo = {
       id: message.conversationId,
@@ -8,32 +9,52 @@ export const addMessageToStore = (state, payload) => {
       messages: [message],
     };
     newConvo.latestMessageText = message.text;
-    return [newConvo, ...state];
+    newState.set(sender.id, newConvo);
+  } else {
+    newState.forEach((v, k) => {
+      if (v.id === message.conversationId) {
+        const convoCopy = { ...v };
+        convoCopy.messages.push(message);
+        convoCopy.latestMessageText = message.text;
+        if (
+          convoCopy.otherUser.id !== message.senderId &&
+          message.viewed &&
+          (!convoCopy.latestView || convoCopy.latestView < message.id)
+        )
+          convoCopy.latestView = message.id;
+        if (convoCopy.otherUser.id === message.senderId && !message.viewed)
+          convoCopy.unreadCount++;
+        return newState.set(k, convoCopy);
+      }
+    });
   }
 
-  return state.map((convo) => {
-    if (convo.id === message.conversationId) {
-      const convoCopy = { ...convo };
-      convoCopy.messages.push(message);
-      convoCopy.latestMessageText = message.text;
-      if (
-        convoCopy.otherUser.id !== message.senderId &&
-        message.viewed &&
-        (!convoCopy.latestView || convoCopy.latestView < message.id)
-      )
-        convoCopy.latestView = message.id;
-      if (convoCopy.otherUser.id === message.senderId && !message.viewed)
-        convoCopy.unreadCount++;
-      return convoCopy;
-    } else {
-      return convo;
-    }
-  });
+  return newState;
+
+  // return state.map((convo) => {
+  //   if (convo.id === message.conversationId) {
+  //     const convoCopy = { ...convo };
+  //     convoCopy.messages.push(message);
+  //     convoCopy.latestMessageText = message.text;
+  //     if (
+  //       convoCopy.otherUser.id !== message.senderId &&
+  //       message.viewed &&
+  //       (!convoCopy.latestView || convoCopy.latestView < message.id)
+  //     )
+  //       convoCopy.latestView = message.id;
+  //     if (convoCopy.otherUser.id === message.senderId && !message.viewed)
+  //       convoCopy.unreadCount++;
+  //     return convoCopy;
+  //   } else {
+  //     return convo;
+  //   }
+  // });
 };
 
 // sets initial read receipt values on loaded conversations
 export const loadedConversations = (state, id, conversations) => {
-  return conversations.map((convo) => {
+  const newState = new Map(state);
+  conversations.forEach((convo) => {
     const convoCopy = { ...convo };
 
     let count = 0;
@@ -50,48 +71,36 @@ export const loadedConversations = (state, id, conversations) => {
         break;
       }
     }
-    return convoCopy;
+    newState.set(convoCopy.otherUser.id, convoCopy);
   });
+  return newState;
 };
 
 export const addOnlineUserToStore = (state, id) => {
-  return state.map((convo) => {
-    if (convo.otherUser.id === id) {
-      const convoCopy = { ...convo };
-      convoCopy.otherUser.online = true;
-      return convoCopy;
-    } else {
-      return convo;
-    }
-  });
+  const newState = new Map(state);
+  const convoCopy = { ...newState.get(id) };
+  convoCopy.otherUser.online = true;
+  newState.set(id, convoCopy);
+
+  return newState;
 };
 
 export const removeOfflineUserFromStore = (state, id) => {
-  return state.map((convo) => {
-    if (convo.otherUser.id === id) {
-      const convoCopy = { ...convo };
-      convoCopy.otherUser.online = false;
-      return convoCopy;
-    } else {
-      return convo;
-    }
-  });
+  const newState = new Map(state);
+  const convoCopy = { ...newState.get(id) };
+  convoCopy.otherUser.online = false;
+  newState.set(id, convoCopy);
+
+  return newState;
 };
 
 export const addSearchedUsersToStore = (state, users) => {
-  const currentUsers = {};
-
-  // make table of current users so we can lookup faster
-  state.forEach((convo) => {
-    currentUsers[convo.otherUser.id] = true;
-  });
-
-  const newState = [...state];
+  const newState = new Map(state);
   users.forEach((user) => {
     // only create a fake convo if we don't already have a convo with this user
-    if (!currentUsers[user.id]) {
+    if (!newState.has(user.id)) {
       let fakeConvo = { otherUser: user, messages: [] };
-      newState.push(fakeConvo);
+      newState.set(user.id, fakeConvo);
     }
   });
 
@@ -99,26 +108,24 @@ export const addSearchedUsersToStore = (state, users) => {
 };
 
 export const addNewConvoToStore = (state, recipientId, message) => {
-  return state.map((convo) => {
-    if (convo.otherUser.id === recipientId) {
-      const newConvo = { ...convo };
-      newConvo.id = message.conversationId;
-      newConvo.messages.push(message);
-      newConvo.latestMessageText = message.text;
-      newConvo.latestView = null;
-      newConvo.unreadCount = 0;
-      return newConvo;
-    } else {
-      return convo;
-    }
-  });
+  const newState = new Map(state);
+  const newConvo = { ...newState.get(recipientId) };
+  newConvo.id = message.conversationId;
+  newConvo.messages.push(message);
+  newConvo.latestMessageText = message.text;
+  newConvo.latestView = null;
+  newConvo.unreadCount = 0;
+  newState.set(recipientId, newConvo);
+
+  return newState;
 };
 
 export const setMessageViewed = (state, conversationId, messageId) => {
-  return state.map((convo) => {
-    if (convo.id === conversationId) {
-      const newConvo = { ...convo };
+  const newState = new Map(state);
 
+  newState.forEach((v, k) => {
+    if (v.id === conversationId) {
+      const newConvo = { ...v };
       for (let i = 0; i < newConvo.messages.length; i++) {
         if (newConvo.messages[i].id === messageId) {
           newConvo.messages[i].viewed = true;
@@ -139,9 +146,9 @@ export const setMessageViewed = (state, conversationId, messageId) => {
       });
       newConvo.unreadCount = count;
 
-      return newConvo;
-    } else {
-      return convo;
+      return newState.set(k, newConvo);
     }
   });
+
+  return newState;
 };

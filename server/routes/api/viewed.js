@@ -20,16 +20,17 @@ router.patch("/", async (req, res, next) => {
       conversation?.user1Id !== senderId &&
       conversation?.user2Id !== senderId
     ) {
-      return res
-        .status(403)
-        .json({
-          error: "Sender is not a member of the associated conversation.",
-        });
+      return res.status(403).json({
+        error: "Sender is not a member of the associated conversation.",
+      });
     }
+    const recipientId =
+      (conversation.user1Id !== senderId && conversation.user1Id) ||
+      conversation.user2Id;
 
-    const message = await Message.updateReadReceipt(messageId);
+    await Message.updateReadReceipt(messageId);
 
-    return res.status(200).json({ message });
+    return res.status(200).json({ senderId, recipientId });
   } catch (error) {
     next(error);
   }

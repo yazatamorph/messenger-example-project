@@ -24,6 +24,8 @@ export const fetchUser = () => async (dispatch) => {
     const { data } = await axios.get("/auth/user");
     dispatch(gotUser(data));
     if (data.id) {
+      socket.auth.token = await localStorage.getItem("messenger-token");
+      socket.connect();
       socket.emit("go-online", data.id);
     }
   } catch (error) {
@@ -38,6 +40,8 @@ export const register = (credentials) => async (dispatch) => {
     const { data } = await axios.post("/auth/register", credentials);
     await localStorage.setItem("messenger-token", data.token);
     dispatch(gotUser(data));
+    socket.auth.token = data.token;
+    socket.connect();
     socket.emit("go-online", data.id);
   } catch (error) {
     console.error(error);
@@ -50,6 +54,8 @@ export const login = (credentials) => async (dispatch) => {
     const { data } = await axios.post("/auth/login", credentials);
     await localStorage.setItem("messenger-token", data.token);
     dispatch(gotUser(data));
+    socket.auth.token = data.token;
+    socket.connect();
     socket.emit("go-online", data.id);
   } catch (error) {
     console.error(error);
@@ -74,7 +80,7 @@ export const fetchConversations = (id) => async (dispatch) => {
   try {
     const { data } = await axios.get("/api/conversations");
     // This is a somewhat costly operation, but it's mitigated by only being performed once
-    data.forEach((c) => {
+    data.forEach((c, index) => {
       c.messages.reverse();
     });
     dispatch(gotConversations(id, data));
@@ -83,21 +89,9 @@ export const fetchConversations = (id) => async (dispatch) => {
   }
 };
 
-const saveMessage = async (body) => {
-  const { data } = await axios.post("/api/messages", body);
-  return data;
-};
-
-const sendMessage = (data, body) => {
-  socket.emit("new-message", {
-    message: data.message,
-    recipientId: body.recipientId,
-    sender: data.sender,
-  });
-};
-
-const sendReadReceipt = (conversationId, messageId) => {
+const sendReadReceipt = (recipientId, conversationId, messageId) => {
   socket.emit("read-receipt", {
+    recipientId,
     conversationId,
     messageId,
   });
@@ -115,9 +109,9 @@ export const updateReadReceipt =
   (conversationId, messageId) => async (dispatch) => {
     try {
       // saves read status to DB
-      await saveReadReceipt(conversationId, messageId);
+      const data = await saveReadReceipt(conversationId, messageId);
       // emits read receipt when user looks at new message
-      sendReadReceipt(conversationId, messageId);
+      sendReadReceipt(data.recipientId, conversationId, messageId);
       // updates when user reads message
       dispatch(setMessageRead(conversationId, messageId));
     } catch (err) {
@@ -125,12 +119,24 @@ export const updateReadReceipt =
     }
   };
 
+const saveMessage = async (body) => {
+  const { data } = await axios.post("/api/messages", body);
+  return data;
+};
+
+const sendMessage = (data, body) => {
+  socket.emit("new-message", {
+    message: data.message,
+    recipientId: body.recipientId,
+    sender: data.sender,
+  });
+};
+
 // message format to send: {recipientId, text, conversationId}
 // conversationId will be set to null if its a brand new conversation
 export const postMessage = (body) => async (dispatch) => {
   try {
     const data = await saveMessage(body);
-
     if (!body.conversationId) {
       dispatch(addConversation(body.recipientId, data.message));
     } else {
