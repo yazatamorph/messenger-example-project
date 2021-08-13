@@ -148,7 +148,7 @@ export const postMessage = (body) => async (dispatch) => {
     console.error(error);
   }
 };
-
+// TODO: Debounce search
 export const searchUsers = (searchTerm) => async (dispatch) => {
   try {
     const { data } = await axios.get(`/api/users/${searchTerm}`);
