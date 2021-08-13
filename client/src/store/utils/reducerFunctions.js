@@ -107,6 +107,15 @@ export const addSearchedUsersToStore = (state, users) => {
   return newState;
 };
 
+export const clearSearchedUsersFromStore = (state) => {
+  const newState = new Map(state);
+  newState.entries((v, k) => {
+    if (!v.id) newState.delete(k);
+  });
+
+  return newState;
+};
+
 export const addNewConvoToStore = (state, recipientId, message) => {
   const newState = new Map(state);
   const newConvo = { ...newState.get(recipientId) };

@@ -2,6 +2,7 @@ import {
   addNewConvoToStore,
   addOnlineUserToStore,
   addSearchedUsersToStore,
+  clearSearchedUsersFromStore,
   removeOfflineUserFromStore,
   addMessageToStore,
   setMessageViewed,
@@ -100,7 +101,7 @@ const reducer = (state = new Map(), action) => {
     case SET_SEARCHED_USERS:
       return addSearchedUsersToStore(state, action.users);
     case CLEAR_SEARCHED_USERS:
-      return state.filter((convo) => convo.id);
+      return clearSearchedUsersFromStore(state);
     case ADD_CONVERSATION:
       return addNewConvoToStore(
         state,
