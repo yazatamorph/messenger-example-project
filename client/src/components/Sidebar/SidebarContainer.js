@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { connect } from "react-redux";
+import debounce from "lodash/debounce";
 import { Sidebar } from "./index";
 import { searchUsers } from "../../store/utils/thunkCreators";
 import { clearSearchedUsers } from "../../store/conversations";
@@ -25,7 +26,11 @@ const SidebarContainer = (props) => {
     setSearchTerm(event.target.value);
   };
 
-  return <Sidebar handleChange={handleChange} searchTerm={searchTerm} />;
+  const debounceHandleChange = debounce(handleChange, 500);
+
+  return (
+    <Sidebar handleChange={debounceHandleChange} searchTerm={searchTerm} />
+  );
 };
 
 const mapDispatchToProps = (dispatch) => {
@@ -35,7 +40,7 @@ const mapDispatchToProps = (dispatch) => {
     },
     clearSearchedUsers: () => {
       dispatch(clearSearchedUsers());
-    }
+    },
   };
 };
 
